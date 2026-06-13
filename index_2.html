@@ -1,0 +1,623 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="initial-scale=1,user-scalable=no,maximum-scale=1,width=device-width">
+        <title>Chinhoyi Buffer Zone Operations Portal</title>
+        
+        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+        <link rel="stylesheet" href="css/qgis2web.css">
+        <link rel="stylesheet" href="css/fontawesome-all.min.css">
+        
+        <style>
+        html, body {
+            width: 100%;
+            height: 100%;
+            padding: 0;
+            margin: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f6f9;
+            overflow: hidden;
+        }
+
+        /* Top Navigation Header Bar */
+        .navbar {
+            height: 50px;
+            background-color: #04079d;
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            z-index: 1000;
+            position: relative;
+        }
+        .navbar-brand {
+            font-weight: bold;
+            font-size: 16px;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+        .navbar-tabs {
+            display: flex;
+            gap: 15px;
+            height: 100%;
+            align-items: center;
+        }
+        .nav-tab {
+            padding: 6px 12px;
+            color: #ffffff !important;
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 500;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+        .nav-tab:hover, .nav-tab.active {
+            color: #ffffff !important;
+            border-bottom: 2px solid #ffffff;
+            opacity: 0.9;
+        }
+
+        /* Main Workspace layout framework */
+        .app-container {
+            display: flex;
+            height: calc(100% - 75px);
+            width: 100%;
+            position: relative;
+        }
+
+        #map {
+            flex: 1;
+            height: 100%;
+        }
+
+        /* Right Side Controls Panel Dashboard */
+        .sidebar-panel {
+            width: 320px;
+            background: #ffffff;
+            border-left: 1px solid #d2d6de;
+            display: flex;
+            flex-direction: column;
+            box-shadow: -2px 0 5px rgba(0,0,0,0.05);
+            z-index: 999;
+        }
+
+        /* Sidebar Tabs Toggles */
+        .sidebar-tabs {
+            display: flex;
+            background: #e1e6ef;
+            border-bottom: 1px solid #cbd5e1;
+        }
+        .sidebar-tab-btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            background: none;
+            font-size: 12px;
+            font-weight: 600;
+            color: #64748b;
+            cursor: pointer;
+            text-align: center;
+            border-bottom: 3px solid transparent;
+            transition: all 0.15s;
+        }
+        .sidebar-tab-btn.active {
+            color: #04079d;
+            border-bottom-color: #04079d;
+            background: rgba(0, 123, 255, 0.10);
+        }
+
+        /* Sidebar Panels Content Layout */
+        .sidebar-content {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background-color: rgba(0, 123, 255, 0.10);
+        }
+        .panel-pane {
+            display: none;
+        }
+        .panel-pane.active {
+            display: block;
+        }
+
+        .panel-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #04079d;
+            margin-top: 0;
+            margin-bottom: 15px;
+            border-bottom: 1px solid #cbd5e1;
+            padding-bottom: 8px;
+        }
+        .search-box input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #cbd5e1;
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-size: 13px;
+            margin-bottom: 10px;
+            background-color: #ffffff;
+        }
+        .btn-search-execute, .btn-action-tool {
+            width: 100%;
+            padding: 10px;
+            background: #04079d;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-bottom: 6px;
+        }
+        .btn-search-clear {
+            width: 100%;
+            padding: 8px;
+            background: #64748b;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .metric-card {
+            background: #ffffff;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            padding: 12px;
+            margin-bottom: 10px;
+            font-size: 12px;
+        }
+
+        /* Coordinates Bar Footer */
+        .dashboard-footer {
+            height: 25px;
+            background-color: #007bff;
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 15px;
+            font-size: 11px;
+            font-weight: 500;
+            z-index: 1000;
+            border-top: 1px solid #cbd5e1;
+        }
+
+        /* Custom Dashboard Sidebar Layer Tree Styles */
+        .custom-layer-section {
+            margin-bottom: 20px;
+        }
+        .custom-section-header {
+            font-size: 13px;
+            font-weight: bold;
+            color: #ffffff;
+            background-color: #04079d;
+            padding: 6px 10px;
+            border-radius: 4px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .custom-layer-item {
+            display: flex;
+            align-items: center;
+            padding: 4px 8px;
+            font-size: 13px;
+            color: #334155;
+            gap: 10px;
+        }
+        .custom-layer-item label {
+            cursor: pointer;
+            user-select: none;
+            flex: 1;
+        }
+        .custom-layer-item input[type="checkbox"], 
+        .custom-layer-item input[type="radio"] {
+            margin: 0;
+            width: 15px;
+            height: 15px;
+            cursor: pointer;
+        }
+        </style>
+    </head>
+    <body>
+
+        <div class="navbar">
+            <div class="navbar-brand">Chinhoyi Informal & Formal Activities DB</div>
+            <div class="navbar-tabs">
+                <a href="#" class="nav-tab active">Map Workspace</a>
+                <a href="#" class="nav-tab">Spatial Data Hub</a>
+            </div>
+        </div>
+
+        <div class="app-container">
+            <div id="map"></div>
+
+            <div class="sidebar-panel">
+                <div class="sidebar-tabs">
+                    <button class="sidebar-tab-btn" id="btn-tab-search" onclick="switchPane('search-pane')">Search</button>
+                    <button class="sidebar-tab-btn active" id="btn-tab-legend" onclick="switchPane('legend-pane')">Layers</button>
+                    <button class="sidebar-tab-btn" id="btn-tab-measure" onclick="switchPane('measure-pane')">Metrics</button>
+                </div>
+                
+                <div class="sidebar-content">
+                    <div id="search-pane" class="panel-pane">
+                        <div class="panel-title">Search Operations</div>
+                        <div class="search-box">
+                            <input type="text" id="dashboard-search-input" placeholder="Search by Stand Num, Business Name...">
+                            <button class="btn-search-execute" onclick="executeAttributeSearch()">Find Feature</button>
+                            <button class="btn-search-clear" onclick="clearAttributeSearch()">Clear Search Highlighting</button>
+                        </div>
+                        <div id="search-results-feedback" style="margin-top:15px; font-size:12px; color:#334155;"></div>
+                    </div>
+
+                    <div id="legend-pane" class="panel-pane active">
+                        <div class="panel-title">Layer Directory Catalog</div>
+                        
+                        <div class="custom-layer-section">
+                            <div class="custom-section-header">
+                                <span>Buffer Zone Features</span>
+                            </div>
+                            <div id="vector-layers-list"></div>
+                        </div>
+
+                        <div class="custom-layer-section">
+                            <div class="custom-section-header">
+                                <span>Base Maps</span>
+                            </div>
+                            <div class="custom-layer-item">
+                                <input type="radio" id="base-osm" name="base-layer-toggle" checked onchange="handleBaseMapSwitch('osm')">
+                                <label for="base-osm">OpenStreetMap</label>
+                            </div>
+                            <div class="custom-layer-item">
+                                <input type="radio" id="base-hybrid" name="base-layer-toggle" onchange="handleBaseMapSwitch('hybrid')">
+                                <label for="base-hybrid">Google Satellite (Hybrid)</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="measure-pane" class="panel-pane">
+                        <div class="panel-title">Survey Measurement Tools</div>
+                        <button class="btn-action-tool" id="measure-toggle-btn" onclick="toggleMeasurementMode()">Activate Distance/Area Plotter</button>
+                        <button class="btn-search-clear" style="width:100%; margin-bottom:15px;" onclick="resetMeasurements()">Clear Custom Traces</button>
+                        
+                        <div class="panel-title" style="font-size:12px; border-bottom:none; margin-bottom:5px;">Live Calculated Output</div>
+                        <div class="metric-card">
+                            <div id="measure-distance-output"><b>Total Length:</b> 0.00 m</div>
+                            <div id="measure-area-output" style="margin-top:5px;"><b>Enclosed Perimeter Area:</b> 0.0000 ha</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="dashboard-footer">
+            <div id="footer-scale-container">System Engine Status: Active</div>
+            <div id="live-coordinates-display">Cursor Location: Lat 0.000000, Lng 0.000000</div>
+        </div>
+
+        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+        <script src="js/Autolinker.min.js"></script>
+
+        <script src="data/activities_1.js"></script>
+        <script src="data/cabin_2.js"></script>
+        <script src="data/car_sale_3.js"></script>
+        <script src="data/car_wash_4.js"></script>
+        <script src="data/fuel_station_5.js"></script>
+        <script src="data/gas_6.js"></script>
+        <script src="data/market_7.js"></script>
+        <script src="data/snooker_8.js"></script>
+        <script src="data/tuckshop_9.js"></script>
+        <script src="data/tyres_10.js"></script>
+        <script src="data/welding_11.js"></script>
+
+        <script>
+        // Tab switching manager
+        function switchPane(paneId) {
+            document.querySelectorAll('.panel-pane').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.sidebar-tab-btn').forEach(b => b.classList.remove('active'));
+            
+            document.getElementById(paneId).classList.add('active');
+            
+            if (paneId === 'search-pane') document.getElementById('btn-tab-search').classList.add('active');
+            if (paneId === 'legend-pane') document.getElementById('btn-tab-legend').classList.add('active');
+            if (paneId === 'measure-pane') document.getElementById('btn-tab-measure').classList.add('active');
+
+            if (paneId !== 'measure-pane' && isMeasuring) {
+                toggleMeasurementMode(); 
+                resetMeasurements();     
+            }
+        }
+
+        // Initialize Map focusing on Index 2 coordinates
+        var map = L.map('map', {
+            zoomControl: true, maxZoom: 28, minZoom: 1
+        }).fitBounds([[-17.39739512483438,30.153878471684838],[-17.360517069825466,30.226536934752307]]);
+        
+        var autolinker = new Autolinker({truncate: {length: 30, location: 'smart'}});
+        L.control.scale({position: 'bottomleft', metric: true, imperial: false}).addTo(map);
+
+        map.on('mousemove', function(e) {
+            document.getElementById('live-coordinates-display').innerHTML = 
+                "Lat: <b>" + e.latlng.lat.toFixed(5) + "</b>, Lng: <b>" + e.latlng.lng.toFixed(5) + "</b>";
+        });
+
+        // Base Maps
+        var osmStandard = L.tileLayer('http://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 22, attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+
+        var googleHybrid = L.tileLayer('https://mt{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
+            maxZoom: 22, subdomains: ['0','1','2','3'], attribution: '© Google Imagery'
+        });
+
+        function handleBaseMapSwitch(type) {
+            if (type === 'osm') {
+                map.removeLayer(googleHybrid);
+                map.addLayer(osmStandard);
+            } else {
+                map.removeLayer(osmStandard);
+                map.addLayer(googleHybrid);
+            }
+        }
+
+        // Dynamic Attributes Popup Builder
+        function pop_generic(feature, layer) {
+            // Mapping ugly database column names to clean dashboard labels
+            const fieldAliases = {
+                "id_1": "Feature ID",
+                "stand_numb": "Stand Number",
+                "account_nu": "Account Number",
+                "business_n": "Business Name",
+                "business_t": "Business Type",
+                "licensed": "Licensed Status",
+                "license_nu": "License Number",
+                "lease_avai": "Lease Availability",
+                "lrase_avai": "Lease Availability",
+                "lease_expi": "Lease Expiry",
+                "list_of_se": "List of Secondary Activities",
+                "photo_url": "Media",
+                "kobo_id": "Kobo System ID"
+            };
+
+            let popupContent = '<table style="width:100%; font-size:11px; border-collapse:collapse;">';
+
+            for (let prop in feature.properties) {
+                let value = feature.properties[prop];
+                // Hide empty or null fields to keep popup clean
+                if (value !== null && value !== undefined && value !== '' && prop !== 'search') {
+                    let displayName = fieldAliases[prop] || prop;
+                    popupContent += `
+                        <tr style="border-bottom:1px solid #eee;">
+                            <th style="text-align:left; padding:4px; background:#f8fafc; font-weight:600;">
+                                ${displayName}
+                            </th>
+                            <td style="padding:4px;color:#334155;">
+                                ${autolinker.link(String(value))}
+                            </td>
+                        </tr>
+                    `;
+                }
+            }
+            popupContent += '</table>';
+            layer.bindPopup(popupContent, { maxHeight: 300, maxWidth: 280 });
+        }
+
+        var bounds_group = new L.featureGroup([]);
+
+        // Function to build layers strictly as POINT MARKERS (CircleMarkers)
+        function buildPointLayer(jsonData, paneName, zIndex, fillColor) {
+            map.createPane(paneName);
+            map.getPane(paneName).style.zIndex = zIndex;
+
+            var pointStyle = {
+                radius: 6.0,
+                opacity: 1,
+                color: '#333333',
+                weight: 1,
+                fill: true,
+                fillOpacity: 0.9,
+                fillColor: fillColor,
+                interactive: true
+            };
+
+            var layer = new L.geoJson(jsonData, {
+                pane: paneName,
+                onEachFeature: pop_generic,
+                // This forces all features to render as points
+                pointToLayer: function (feature, latlng) {
+                    return L.circleMarker(latlng, pointStyle);
+                }
+            });
+            bounds_group.addLayer(layer);
+            map.addLayer(layer);
+            return layer;
+        }
+
+        // Initialize Index 2 Feature Layers as Points using their original colors
+        var layer_welding_11 = buildPointLayer(json_welding_11, 'pane_welding_11', 411, 'rgba(232,113,141,1.0)');
+        var layer_tyres_10 = buildPointLayer(json_tyres_10, 'pane_tyres_10', 410, 'rgba(243,166,178,1.0)');
+        var layer_tuckshop_9 = buildPointLayer(json_tuckshop_9, 'pane_tuckshop_9', 409, 'rgba(213,180,60,1.0)');
+        var layer_snooker_8 = buildPointLayer(json_snooker_8, 'pane_snooker_8', 408, 'rgba(133,182,111,1.0)');
+        var layer_market_7 = buildPointLayer(json_market_7, 'pane_market_7', 407, 'rgba(145,82,45,1.0)');
+        var layer_gas_6 = buildPointLayer(json_gas_6, 'pane_gas_6', 406, 'rgba(196,60,57,1.0)');
+        var layer_fuel_station_5 = buildPointLayer(json_fuel_station_5, 'pane_fuel_station_5', 405, 'rgba(225,89,137,1.0)');
+        var layer_car_wash_4 = buildPointLayer(json_car_wash_4, 'pane_car_wash_4', 404, 'rgba(152,125,183,1.0)');
+        var layer_car_sale_3 = buildPointLayer(json_car_sale_3, 'pane_car_sale_3', 403, 'rgba(183,72,75,1.0)');
+        var layer_cabin_2 = buildPointLayer(json_cabin_2, 'pane_cabin_2', 402, 'rgba(232,113,141,1.0)');
+        var layer_activities_1 = buildPointLayer(json_activities_1, 'pane_activities_1', 401, 'rgba(243,166,178,1.0)');
+
+        // Sidebar Directory Menu Builder
+        var layerCatalogConfig = [
+            { id: 'l_weld', label: 'Welding', layer: layer_welding_11 },
+            { id: 'l_tyres', label: 'Tyres', layer: layer_tyres_10 },
+            { id: 'l_tuck', label: 'Tuckshop', layer: layer_tuckshop_9 },
+            { id: 'l_snook', label: 'Snooker', layer: layer_snooker_8 },
+            { id: 'l_mark', label: 'Market', layer: layer_market_7 },
+            { id: 'l_gas', label: 'Gas', layer: layer_gas_6 },
+            { id: 'l_fuel', label: 'Fuel Station', layer: layer_fuel_station_5 },
+            { id: 'l_wash', label: 'Car Wash', layer: layer_car_wash_4 },
+            { id: 'l_sale', label: 'Car Sale', layer: layer_car_sale_3 },
+            { id: 'l_cab', label: 'Cabin', layer: layer_cabin_2 },
+            { id: 'l_act', label: 'Other Activities', layer: layer_activities_1 }
+        ];
+
+        var listContainer = document.getElementById('vector-layers-list');
+        layerCatalogConfig.forEach(function(item) {
+            var row = document.createElement('div');
+            row.className = 'custom-layer-item';
+            
+            var checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.id = item.id;
+            checkbox.checked = true;
+            
+            checkbox.addEventListener('change', function() {
+                if (this.checked) { map.addLayer(item.layer); } 
+                else { map.removeLayer(item.layer); }
+            });
+
+            var label = document.createElement('label');
+            label.htmlFor = item.id;
+            label.innerText = item.label;
+
+            row.appendChild(checkbox);
+            row.appendChild(label);
+            listContainer.appendChild(row);
+        });
+
+        // --- UNIVERSAL SEARCH ENGINE MAPPER ---
+        function executeAttributeSearch() {
+            var query = document.getElementById('dashboard-search-input').value.trim().toLowerCase();
+            var feedback = document.getElementById('search-results-feedback');
+            if (!query) { feedback.innerHTML = "Provide a valid string criteria target value."; return; }
+
+            var matchFound = false;
+
+            // Reset styles before new search
+            layerCatalogConfig.forEach(item => {
+                item.layer.eachLayer(layer => { item.layer.resetStyle(layer); });
+            });
+
+            for (var i = 0; i < layerCatalogConfig.length; i++) {
+                if (matchFound) break; 
+                
+                var currentGroup = layerCatalogConfig[i].layer;
+
+                currentGroup.eachLayer(layer => {
+                    if (matchFound) return;
+
+                    var props = layer.feature.properties;
+                    
+                    for (var key in props) {
+                        if (props.hasOwnProperty(key)) {
+                            var value = props[key];
+                            
+                            // Check if the property value contains the search string
+                            if (value !== null && value !== undefined && String(value).toLowerCase().includes(query)) {
+                                matchFound = true;
+                                
+                                // Highlight found point in bright pink
+                                layer.setStyle({ fillColor: '#ff0055', radius: 10, fillOpacity: 1.0 });
+                                
+                                // Zoom to point
+                                if (layer.getLatLng) {
+                                    map.setView(layer.getLatLng(), 19, { animate: true });
+                                }
+                                
+                                layer.openPopup();
+                                feedback.innerHTML = "<b>Found Match:</b> " + 
+                                    (props['business_n'] || props['stand_numb'] || value);
+                                return;
+                            }
+                        }
+                    }
+                });
+            }
+
+            if (!matchFound) { feedback.innerHTML = "<span style='color:red;'>No matching database records found.</span>"; }
+        }
+
+        function clearAttributeSearch() {
+            document.getElementById('dashboard-search-input').value = "";
+            document.getElementById('search-results-feedback').innerHTML = "";
+            layerCatalogConfig.forEach(item => {
+                item.layer.eachLayer(layer => { item.layer.resetStyle(layer); });
+            });
+        }
+
+        // --- MEASUREMENT SYSTEM ENGINE CALCULATOR ---
+        var isMeasuring = false;
+        var measurePoints = [];
+        var measureLineLayer = L.polyline([], {color: '#3b82f6', weight: 4, dashArray: '6, 6'}).addTo(map);
+        var measurePolygonLayer = L.polygon([], {color: '#3b82f6', weight: 1, fillColor: '#3b82f6', fillOpacity: 0.2}).addTo(map);
+        var measureMarkers = [];
+
+        function toggleMeasurementMode() {
+            isMeasuring = !isMeasuring;
+            var btn = document.getElementById('measure-toggle-btn');
+            if (isMeasuring) {
+                btn.innerHTML = "Deactivate Plotter Mode";
+                btn.style.backgroundColor = "#ef4444";
+                map.getContainer().style.cursor = 'crosshair';
+            } else {
+                btn.innerHTML = "Activate Distance/Area Plotter";
+                btn.style.backgroundColor = "#04079d";
+                map.getContainer().style.cursor = '';
+            }
+        }
+
+        map.on('click', function(e) {
+            if (!isMeasuring) return;
+
+            measurePoints.push(e.latlng);
+            var marker = L.circleMarker(e.latlng, {radius: 5, color: '#1b2a4a', fillColor: '#fff', fillOpacity: 1}).addTo(map);
+            measureMarkers.push(marker);
+
+            measureLineLayer.setLatLngs(measurePoints);
+            if (measurePoints.length > 2) { measurePolygonLayer.setLatLngs(measurePoints); }
+
+            var totalDistance = 0;
+            for (var i = 0; i < measurePoints.length - 1; i++) {
+                totalDistance += measurePoints[i].distanceTo(measurePoints[i+1]);
+            }
+            
+            var distString = totalDistance > 1000 ? (totalDistance / 1000).toFixed(2) + " km" : totalDistance.toFixed(1) + " m";
+            document.getElementById('measure-distance-output').innerHTML = "<b>Total Length:</b> " + distString;
+
+            if (measurePoints.length > 2) {
+                var areaSqMeters = calculatePlanarPolygonArea(measurePoints);
+                var areaHectares = areaSqMeters / 10000;
+                var areaString = areaHectares.toFixed(4) + " ha";
+                document.getElementById('measure-area-output').innerHTML = "<b>Enclosed Perimeter Area:</b> " + areaString;
+            }
+        });
+
+        function calculatePlanarPolygonArea(latlngs) {
+            var total = 0, r = 6378137;
+            if (latlngs.length < 3) return 0;
+            for (var i = 0, len = latlngs.length; i < len; i++) {
+                var p1 = latlngs[i], p2 = latlngs[(i + 1) % len];
+                total += (p2.lng * Math.PI / 180 - p1.lng * Math.PI / 180) * (2 + Math.sin(p1.lat * Math.PI / 180) + Math.sin(p2.lat * Math.PI / 180));
+            }
+            return Math.abs(total * r * r / 2);
+        }
+
+        function resetMeasurements() {
+            measurePoints = [];
+            measureLineLayer.setLatLngs([]);
+            measurePolygonLayer.setLatLngs([]);
+            measureMarkers.forEach(m => map.removeLayer(m));
+            measureMarkers = [];
+            document.getElementById('measure-distance-output').innerHTML = "<b>Total Length:</b> 0.00 m";
+            document.getElementById('measure-area-output').innerHTML = "<b>Enclosed Perimeter Area:</b> 0.0000 ha";
+        }
+        </script>        
+    </body>
+</html>
